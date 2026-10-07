@@ -1,4 +1,4 @@
-import { CATEGORIES } from '../../new/page';
+import { CATEGORIES } from '@/lib/constants';
 import { db } from '@/lib/db';
 import { listings } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';

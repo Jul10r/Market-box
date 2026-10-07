@@ -1,18 +1,10 @@
 import { db } from '@/lib/db';
-import { listings } from '@/db/schema';
+import { listings, listingImages } from '@/db/schema';
 import { syncCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-
-export const CATEGORIES = [
-    'Electronics',
-    'Furniture',
-    'Clothing',
-    'Books',
-    'Sports',
-    'Toys & Games',
-    'Other',
-] as const;
+import ImageUploader from './ImageUploader';
+import { CATEGORIES } from '@/lib/constants'
 
 async function createListingAction(formData: FormData) {
     'use server';
@@ -27,6 +19,7 @@ async function createListingAction(formData: FormData) {
     const price = formData.get('price') as string;
     const category = formData.get('category') as string;
     const location = formData.get('location') as string;
+    const imageUrls = formData.getAll('images') as string[];
 
     const [newListing] = await db
         .insert(listings)
@@ -40,8 +33,20 @@ async function createListingAction(formData: FormData) {
         })
         .returning({ id: listings.id })
 
+    if (imageUrls.length > 0) {
+        await db
+            .insert(listingImages)
+            .values(
+                imageUrls.map((url) => ({
+                    listingId: newListing.id,
+                    imageUrl: url,
+                }))
+            )
+    }
+
     revalidatePath('/');
     redirect(`/listings/${newListing.id}`)
+
 }
 
 export default function NewListingPage() {
@@ -79,6 +84,11 @@ export default function NewListingPage() {
                 <div>
                     <label>Location:</label>
                     <input name="location" />
+                </div>
+
+                <div>
+                    <label>Photos:</label>
+                    <ImageUploader />
                 </div>
 
                 <button type="submit">Publish Listing</button>
