@@ -1,10 +1,10 @@
 import { db } from '@/lib/db';
-import { listings } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { notFound, redirect } from 'next/navigation';
+import { listings, listingImages } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { syncCurrentUser } from '@/lib/auth'
-import { revalidatePath } from 'next/cache';
+import { deleteListingAction, contactSellerAction } from './actions';
 
 
 interface ListingPageProps {
@@ -23,30 +23,29 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
         notFound();
     }
 
+    const images = await db
+        .select()
+        .from(listingImages)
+        .where(eq(listingImages.listingId, Number(id)));
+
     const user = await syncCurrentUser()
 
-    async function deleteListingAction() {
-        'use server'
-
-        const user = await syncCurrentUser();
-        if (!user) {
-            redirect('/sign-in')
-        };
-
-        await db
-            .delete(listings)
-            .where(and(
-                eq(listings.id, Number(id)),
-                eq(listings.sellerId, user.id)
-            ))
-
-        revalidatePath('/')
-        redirect('/')
-    }
 
     return (
         <main>
             <Link href="/">Back to all listings</Link>
+            {images.length > 0 && (
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '16px 0' }}>
+                    {images.map((img) => (
+                        <img
+                            key={img.id}
+                            src={img.imageUrl}
+                            alt={listing.title}
+                            style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '8px' }}
+                        />
+                    ))}
+                </div>
+            )}
             <h1>{listing.title}</h1>
             <p>Price: ${listing.price}</p>
             <p>Category: {listing.category}</p>
@@ -56,10 +55,15 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
             {user?.id === listing.sellerId && (
                 <div>
                     <Link href={`/listings/${listing.id}/edit`}>Edit Listing</Link>
-                    <form action={deleteListingAction}>
+                    <form action={deleteListingAction.bind(null, listing.id)}>
                         <button type="submit">Delete Listing</button>
                     </form>
                 </div>
+            )}
+            {user?.id !== listing.sellerId && (
+                <form action={contactSellerAction.bind(null, listing.id, listing.sellerId)}>
+                    <button type="submit">Message Seller</button>
+                </form>
             )}
         </main>
     )
