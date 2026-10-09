@@ -6,6 +6,8 @@ import SearchBar from '@/components/SearchBar';
 import CategoryFilter from '@/components/CategoryFilter';
 import PriceFilter from '@/components/PriceFilter';
 import SortSelect from '@/components/SortSelect';
+import { getAllListingReviewStats } from '@/lib/reviews';
+import StarRating from '@/components/StarRating';
 
 
 interface HomePageProps {
@@ -57,6 +59,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .select()
     .from(listingImages);
 
+  const allReviewStats = await getAllListingReviewStats();
+
 
   return (
     <main className="max-w-7xl mx-auto p-4 sm:p-6">
@@ -74,6 +78,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {allListings.map((listing) => {
             const thumbnail = allImages.find((img) => img.listingId === listing.id);
+            const reviewStat = allReviewStats.find((s) => s.listingId === listing.id)
             return (
               <div key={listing.id} className="border border-gray-200 rounded-lg overflow-hidden flex flex-col hover:shadow-md transition">
                 {thumbnail ? (
@@ -88,6 +93,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   </div>
                 )}
                 <div className="p-4 flex flex-col flex-1">
+                  <StarRating rating={reviewStat?.avgRating ?? null} count={reviewStat?.totalReviews} />
                   <Link href={`/listings/${listing.id}`}>
                     <h2>{listing.title}</h2>
                   </Link>

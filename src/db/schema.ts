@@ -6,6 +6,7 @@ import {
   text,
   timestamp,
   varchar,
+  uniqueIndex
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -90,8 +91,8 @@ export const messages = pgTable("messages", {
 
 export const reviews = pgTable("reviews", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  listingId: integer("listing_id").references(() => listings.id, {
-    onDelete: "set null",
+  listingId: integer("listing_id").notNull().references(() => listings.id, {
+    onDelete: "cascade",
   }),
   reviewerId: text("reviewer_id")
     .notNull()
@@ -104,7 +105,14 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-});
+},
+  (table) => [
+    uniqueIndex("reviews_reviewer_listing_idx").on(
+      table.reviewerId,
+      table.listingId
+    ),
+  ]
+);
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
