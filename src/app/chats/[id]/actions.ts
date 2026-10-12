@@ -7,12 +7,22 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { eq } from 'drizzle-orm'
 import { ablyRest } from "@/lib/ably"
+import { messageRatelimit } from "@/lib/ratelimit"
+import { messageSchema } from "@/lib/validations"
 
 export async function sendMessageAction(chatId: number, formData: FormData) {
     const user = await syncCurrentUser()
 
     if (!user) {
         redirect('/sign-in')
+    }
+
+    const { success, reset } = await messageRatelimit.limit(user.id);
+    if (!success) {
+        const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
+        return {
+            error: `You are sending messages too quickly. Please wait ${retryAfterSeconds}s.`
+        };
     }
 
     const [chat] = await db
@@ -24,12 +34,15 @@ export async function sendMessageAction(chatId: number, formData: FormData) {
         throw new Error("Unauthorized")
     }
 
-    const message = formData.get('content')?.toString()
-
-    if (!message || message.trim() === '') {
-        return
+    const rawData = {
+        content: formData.get('content'),
+    };
+    const result = messageSchema.safeParse(rawData);
+    if (!result.success) {
+        return {
+            error: result.error.issues[0]?.message || "Invalid message"
+        };
     }
-
 
 
     const [newMessage] = await db
@@ -37,7 +50,7 @@ export async function sendMessageAction(chatId: number, formData: FormData) {
         .values({
             chatId,
             senderId: user.id,
-            content: message
+            content: result.data.content
         })
 
         .returning()
@@ -46,4 +59,6 @@ export async function sendMessageAction(chatId: number, formData: FormData) {
     await channel.publish("message", newMessage)
 
     revalidatePath('/chats/' + chatId)
+
+    return { success: true }
 }

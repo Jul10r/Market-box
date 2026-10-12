@@ -3,7 +3,9 @@
 import { chats, listings, reviews } from "@/db/schema";
 import { syncCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { listingRatelimit, reviewRatelimit } from "@/lib/ratelimit";
 import { hasUserReviewedListing } from "@/lib/reviews";
+import { listingSchema, reviewSchema } from "@/lib/validations";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -63,7 +65,16 @@ export async function contactSellerAction(listingId: number, sellerId: string) {
 
 export async function createReviewAction(listingId: number, formData: FormData) {
     const user = await syncCurrentUser();
-    if (!user) redirect('/sign-in')
+    if (!user) redirect('/sign-in');
+
+    const { success, reset } = await reviewRatelimit.limit(user.id);
+    if (!success) {
+        const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
+        return {
+            success: false,
+            error: `You are submitting reviews too quickly. Please wait ${retryAfterSeconds}s.`
+        };
+    }
 
     const [listing] = await db
         .select()
@@ -84,13 +95,18 @@ export async function createReviewAction(listingId: number, formData: FormData) 
         return { success: false, error: "You have already left a review for this item!" }
     }
 
-    const rating = Number(formData.get('rating'));
+    const rawData = {
+        rating: formData.get('rating'),
+        comment: formData.get('comment'),
+    };
 
-    if (isNaN(rating) || (rating < 1 || rating > 5)) {
-        return { success: false, error: "Please select a rating between 1 and 5 stars." }
+    const result = reviewSchema.safeParse(rawData);
+    if (!result.success) {
+        return {
+            success: false,
+            error: result.error.issues[0]?.message || "Invalid review data",
+        };
     }
-
-    const comment = (formData.get('comment') as string)?.trim() || null;
 
     await db
         .insert(reviews)
@@ -98,8 +114,8 @@ export async function createReviewAction(listingId: number, formData: FormData) 
             listingId: listing.id,
             reviewerId: user.id,
             revieweeId: listing.sellerId,
-            rating: rating,
-            comment: comment,
+            rating: result.data.rating,
+            comment: result.data.comment || null,
         })
 
     revalidatePath(`/listings/${listingId}`);
@@ -143,4 +159,53 @@ export async function toggleSoldStatusAction(listingId: number) {
     revalidatePath(`/listings/${listingId}`);
     revalidatePath('/')
     revalidatePath('/dashboard')
+}
+
+export async function updateListingAction(listingId: number, formData: FormData) {
+
+    const user = await syncCurrentUser();
+    if (!user) {
+        redirect('/sign-in')
+    }
+
+    const { success, reset } = await listingRatelimit.limit(user.id);
+
+    if (!success) {
+        const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
+        return {
+            error: `Rate limit exceeded. Please wait ${retryAfterSeconds}s before updating again.`
+        }
+    }
+
+    const rawData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        price: formData.get('price'),
+        category: formData.get('category'),
+        location: formData.get('location'),
+    };
+    const result = listingSchema.safeParse(rawData);
+    if (!result.success) {
+        return {
+            error: result.error.issues[0]?.message || "Invalid input data"
+        };
+    }
+
+    await db
+        .update(listings)
+        .set({
+            title: result.data.title,
+            description: result.data.description,
+            price: result.data.price.toFixed(2),
+            category: result.data.category,
+            location: result.data.location || null,
+            updatedAt: new Date()
+        })
+        .where(and(
+            eq(listings.id, listingId),
+            eq(listings.sellerId, user.id)
+        ));
+    revalidatePath('/');
+    revalidatePath(`/listings/${listingId}`);
+    redirect(`/listings/${listingId}`);
 }

@@ -1,59 +1,37 @@
-import { db } from '@/lib/db';
-import { listings, listingImages } from '@/db/schema';
-import { syncCurrentUser } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+'use client'
+
+import { useState, useTransition } from 'react';
+import { createListingAction } from './actions';
 import ImageUploader from './ImageUploader';
 import { CATEGORIES } from '@/lib/constants'
 
-async function createListingAction(formData: FormData) {
-    'use server';
-
-    const user = await syncCurrentUser();
-    if (!user) {
-        redirect('/sign-in')
-    }
-
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const price = formData.get('price') as string;
-    const category = formData.get('category') as string;
-    const location = formData.get('location') as string;
-    const imageUrls = formData.getAll('images') as string[];
-
-    const [newListing] = await db
-        .insert(listings)
-        .values({
-            sellerId: user.id,
-            title,
-            description,
-            price,
-            category,
-            location,
-        })
-        .returning({ id: listings.id })
-
-    if (imageUrls.length > 0) {
-        await db
-            .insert(listingImages)
-            .values(
-                imageUrls.map((url) => ({
-                    listingId: newListing.id,
-                    imageUrl: url,
-                }))
-            )
-    }
-
-    revalidatePath('/');
-    redirect(`/listings/${newListing.id}`)
-
-}
 
 export default function NewListingPage() {
+
+    const [error, setError] = useState<string | null>(null);
+    const [isPending, startTransition] = useTransition();
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        setError(null);
+        startTransition(async () => {
+            const result = await createListingAction(formData);
+            if (result?.error) {
+                setError(result.error)
+            }
+        })
+    }
+
     return (
         <main>
             <h1>Create a New Listing</h1>
-            <form action={createListingAction}>
+            {error && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm mb-4">
+                    {error}
+                </div>
+            )}
+            <form onSubmit={handleSubmit}>
                 <div>
                     <label>Title:</label>
                     <input name="title" required />
@@ -91,7 +69,9 @@ export default function NewListingPage() {
                     <ImageUploader />
                 </div>
 
-                <button type="submit">Publish Listing</button>
+                <button type="submit" disabled={isPending}>
+                    {isPending ? "Publishing..." : "Publish Listing"}
+                </button>
             </form>
         </main>
     )

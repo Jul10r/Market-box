@@ -5,6 +5,7 @@ import { asc, eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { sendMessageAction } from "./actions";
 import ChatMessages from './ChatMessages';
+import ChatInput from "./ChatInput";
 
 interface ChatPageProps {
     params: Promise<{ id: string }>
@@ -46,21 +47,7 @@ export default async function chatPage({ params }: ChatPageProps) {
                 currentUserId={user.id}
                 initialMessages={chatMessages}
             />
-            <form action={sendMessageAction.bind(null, chat.id)} className="flex gap-2">
-                <input
-                    type="text"
-                    name="content"
-                    placeholder="Type a message..."
-                    required
-                    className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700"
-                >
-                    Send
-                </button>
-            </form>
+            <ChatInput chatId={chat.id} />
         </main>
     )
 }
