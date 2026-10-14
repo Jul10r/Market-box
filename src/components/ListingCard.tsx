@@ -106,7 +106,7 @@ export default function ListingCard({
             <span className="text-slate-400">Sold out</span>
           ) : rating && reviewCount && reviewCount > 0 ? (
             <span className="text-amber-500 font-semibold flex items-center gap-1">
-              ★ {rating.toFixed(1)} <span className="text-slate-400 font-normal">({reviewCount})</span>
+              ★ {Number(rating).toFixed(1)} <span className="text-slate-400 font-normal">({reviewCount})</span>
             </span>
           ) : (
             <span className="text-slate-400 text-xs">No reviews</span>

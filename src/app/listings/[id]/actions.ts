@@ -64,64 +64,74 @@ export async function contactSellerAction(listingId: number, sellerId: string) {
 }
 
 export async function createReviewAction(listingId: number, formData: FormData) {
-    const user = await syncCurrentUser();
-    if (!user) redirect('/sign-in');
+    try {
+        const user = await syncCurrentUser();
+        if (!user) redirect('/sign-in');
 
-    const { success, reset } = await reviewRatelimit.limit(user.id);
-    if (!success) {
-        const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
+        const { success, reset } = await reviewRatelimit.limit(user.id);
+        if (!success) {
+            const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
+            return {
+                success: false,
+                error: `You are submitting reviews too quickly. Please wait ${retryAfterSeconds}s.`
+            };
+        }
+
+        const [listing] = await db
+            .select()
+            .from(listings)
+            .where(eq(listings.id, listingId));
+
+        if (!listing) {
+            return { success: false, error: "Listing not found!" };
+        }
+
+        if (listing.sellerId === user.id) {
+            return { success: false, error: "You cannot review your own listing!" };
+        }
+
+        const alreadyReviewed = await hasUserReviewedListing(user.id, listingId);
+
+        if (alreadyReviewed) {
+            return { success: false, error: "You have already left a review for this item!" };
+        }
+
+        const rawData = {
+            rating: formData.get('rating'),
+            comment: formData.get('comment'),
+        };
+
+        const result = reviewSchema.safeParse(rawData);
+        if (!result.success) {
+            return {
+                success: false,
+                error: result.error.issues[0]?.message || "Invalid review data",
+            };
+        }
+
+        await db
+            .insert(reviews)
+            .values({
+                listingId: listing.id,
+                reviewerId: user.id,
+                revieweeId: listing.sellerId,
+                rating: result.data.rating,
+                comment: result.data.comment || null,
+            });
+
+        revalidatePath(`/listings/${listingId}`);
+        revalidatePath('/');
+
+        return { success: true };
+    } catch (e: any) {
+        if (e?.digest?.startsWith?.('NEXT_REDIRECT') || e?.message === 'NEXT_REDIRECT') {
+            throw e;
+        }
         return {
             success: false,
-            error: `You are submitting reviews too quickly. Please wait ${retryAfterSeconds}s.`
+            error: e?.message || "Failed to submit review. Please try again."
         };
     }
-
-    const [listing] = await db
-        .select()
-        .from(listings)
-        .where(eq(listings.id, listingId))
-
-    if (!listing) {
-        return { success: false, error: "Listing not found!" }
-    }
-
-    if (listing.sellerId === user.id) {
-        return { success: false, error: "You cannot review your own listing!" }
-    }
-
-    const alreadyReviewed = await hasUserReviewedListing(user.id, listingId);
-
-    if (alreadyReviewed) {
-        return { success: false, error: "You have already left a review for this item!" }
-    }
-
-    const rawData = {
-        rating: formData.get('rating'),
-        comment: formData.get('comment'),
-    };
-
-    const result = reviewSchema.safeParse(rawData);
-    if (!result.success) {
-        return {
-            success: false,
-            error: result.error.issues[0]?.message || "Invalid review data",
-        };
-    }
-
-    await db
-        .insert(reviews)
-        .values({
-            listingId: listing.id,
-            reviewerId: user.id,
-            revieweeId: listing.sellerId,
-            rating: result.data.rating,
-            comment: result.data.comment || null,
-        })
-
-    revalidatePath(`/listings/${listingId}`);
-
-    return { success: true }
-
 }
 
 export async function toggleSoldStatusAction(listingId: number) {

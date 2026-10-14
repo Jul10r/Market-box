@@ -219,19 +219,19 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                   <div key={review.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2.5">
-                        {review.reviewer.avatarUrl ? (
+                        {review.reviewer?.avatarUrl ? (
                           <img
                             src={review.reviewer.avatarUrl}
-                            alt={review.reviewer.username}
+                            alt={review.reviewer.username ?? 'Reviewer'}
                             className="w-7 h-7 rounded-full object-cover border border-slate-200"
                           />
                         ) : (
                           <div className="w-7 h-7 rounded-full bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center">
-                            {review.reviewer.username[0]?.toUpperCase()}
+                            {(review.reviewer?.username?.[0] || 'U').toUpperCase()}
                           </div>
                         )}
                         <span className="text-xs font-semibold text-slate-900">
-                          {review.reviewer.username}
+                          {review.reviewer?.username ?? 'User'}
                         </span>
                       </div>
                       <span className="text-[11px] text-slate-400">

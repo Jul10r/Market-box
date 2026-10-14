@@ -11,7 +11,7 @@ import {
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
   username: varchar("username", { length: 100 }).notNull(),
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at", { withTimezone: true })

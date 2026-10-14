@@ -1,11 +1,13 @@
 interface StarRatingProps {
-  rating: number | null
+  rating: number | string | null
   count?: number
   countLabel?: string
 }
 
 export default function StarRating({ rating, count, countLabel }: StarRatingProps) {
-  if (rating === null || rating === 0) {
+  const numericRating = rating !== null && rating !== undefined ? Number(rating) : 0
+
+  if (!numericRating || isNaN(numericRating)) {
     return (
       <span className="text-xs text-slate-400 font-medium">
         No reviews
@@ -26,7 +28,7 @@ export default function StarRating({ rating, count, countLabel }: StarRatingProp
           <svg
             key={star}
             className={`w-3.5 h-3.5 ${
-              star <= Math.round(rating)
+              star <= Math.round(numericRating)
                 ? 'text-amber-500 fill-amber-500'
                 : 'text-slate-200 fill-slate-200'
             }`}
@@ -37,7 +39,7 @@ export default function StarRating({ rating, count, countLabel }: StarRatingProp
         ))}
       </div>
       <span className="text-xs font-bold text-slate-800">
-        {rating.toFixed(1)}
+        {numericRating.toFixed(1)}
       </span>
       {formattedCount && (
         <span className="text-xs text-slate-400 font-normal">
