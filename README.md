@@ -4,6 +4,8 @@ A full-stack, real-time peer-to-peer marketplace web application built with Next
 
 Designed with an image-first, clean browsing experience inspired by Facebook Marketplace and Etsy.
 
+**Live Application:** [https://market-box-three.vercel.app](https://market-box-three.vercel.app)
+
 ---
 
 ## Features
@@ -111,7 +113,7 @@ market-box/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/market-box.git
+git clone https://github.com/Jul10r/Market-box.git
 cd market-box
 ```
 
