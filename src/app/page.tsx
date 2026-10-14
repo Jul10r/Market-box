@@ -62,9 +62,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between pb-5 border-b border-slate-100">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between pb-5 border-b border-slate-100">
           <SearchBar />
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 text-xs shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
             <PriceFilter />
             <SortSelect />
             <Link

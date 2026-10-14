@@ -25,7 +25,7 @@ export default function SearchBar() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full sm:w-auto flex-1 min-w-0 max-w-md items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus-within:border-slate-400 focus-within:bg-white transition">
+    <form onSubmit={handleSubmit} className="flex w-full lg:max-w-md items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus-within:border-slate-400 focus-within:bg-white transition">
       <button
         type="submit"
         aria-label="Search"

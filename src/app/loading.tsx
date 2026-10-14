@@ -2,9 +2,9 @@ export default function Loading() {
   return (
     <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 animate-pulse">
       <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between pb-5 border-b border-slate-100">
-          <div className="h-10 bg-slate-100 rounded-lg w-full sm:w-auto flex-1 min-w-0 max-w-md"></div>
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between pb-5 border-b border-slate-100">
+          <div className="h-10 bg-slate-100 rounded-lg w-full lg:max-w-md"></div>
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="h-8 w-28 bg-slate-100 rounded-lg shrink-0"></div>
             <div className="h-8 w-24 bg-slate-100 rounded-lg shrink-0"></div>
             <div className="h-8 w-24 bg-slate-200 rounded-lg shrink-0"></div>
