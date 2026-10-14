@@ -30,11 +30,12 @@ export default function RootLayout({
         <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
           <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-              <Link href="/" className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                <span className="w-7 h-7 bg-slate-900 text-white rounded-lg flex items-center justify-center text-sm font-black">
-                  M
-                </span>
-                MarketBox
+              <Link href="/" className="flex items-center">
+                <img
+                  src="/logo.svg"
+                  alt="MarketBox"
+                  className="h-8 w-auto"
+                />
               </Link>
               <div className="flex items-center gap-3 sm:gap-4">
                 <Show when="signed-out">
