@@ -87,9 +87,6 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                   <span className={`text-3xl font-extrabold ${listing.status === 'sold' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                     ${listing.price}
                   </span>
-                  <span className="text-xs text-slate-500 font-medium">
-                    Pick up only
-                  </span>
                 </div>
               </div>
 
