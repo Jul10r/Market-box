@@ -24,6 +24,13 @@ export default function SearchBar() {
     router.replace(`${pathname}?${params.toString()}`)
   }
 
+  function handleClear() {
+    setTerm('')
+    const params = new URLSearchParams(searchParams)
+    params.delete('q')
+    router.replace(`${pathname}?${params.toString()}`)
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex w-full lg:max-w-md items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus-within:border-slate-400 focus-within:bg-white transition">
       <button
@@ -42,6 +49,18 @@ export default function SearchBar() {
         onChange={(e) => setTerm(e.target.value)}
         className="bg-transparent outline-none w-full min-w-0 text-slate-800 placeholder-slate-400 text-sm"
       />
+      {term && (
+        <button
+          type="button"
+          onClick={handleClear}
+          aria-label="Clear search"
+          className="text-slate-400 hover:text-slate-600 shrink-0 cursor-pointer flex items-center justify-center"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </form>
   )
 }
