@@ -8,6 +8,14 @@ Designed with an image-first, clean browsing experience inspired by Facebook Mar
 
 ---
 
+## Preview
+
+| Discovery & Feed | Listing Detail & Reviews |
+| :---: | :---: |
+| ![MarketBox Marketplace Feed](public/screenshots/home.png) | ![Listing Detail & Reviews](public/screenshots/listing-detail.png) |
+
+---
+
 ## Features
 
 ### 1. Discovery & Search
@@ -76,6 +84,7 @@ market-box/
 │   │   └── page.tsx                     # Marketplace discovery and filters
 │   ├── components/
 │   │   ├── CategoryFilter.tsx           # Category selector pill bar
+│   │   ├── Footer.tsx                   # Global footer component
 │   │   ├── ListingCard.tsx              # Reusable product card component
 │   │   ├── ListingGallery.tsx           # Product detail image gallery
 │   │   ├── PriceFilter.tsx              # Min/max price inputs
@@ -85,13 +94,17 @@ market-box/
 │   │   └── StarRating.tsx               # Visual star rating renderer
 │   ├── db/
 │   │   └── schema.ts                    # PostgreSQL table definitions
-│   └── lib/
-│       ├── ably.ts                      # Ably client initialization
-│       ├── auth.ts                      # Clerk user sync helper
-│       ├── db.ts                        # Drizzle database client
-│       ├── ratelimit.ts                 # Upstash Redis sliding window limiters
-│       ├── reviews.ts                   # Review queries and aggregation logic
-│       └── validations/                 # Zod validation schemas
+│   ├── lib/
+│   │   ├── ably.ts                      # Ably client initialization
+│   │   ├── auth.ts                      # Clerk user sync helper
+│   │   ├── constants.ts                 # Marketplace category definitions
+│   │   ├── db.ts                        # Drizzle database client
+│   │   ├── ratelimit.ts                 # Upstash Redis sliding window limiters
+│   │   ├── redis.ts                     # Upstash Redis client instance
+│   │   ├── reviews.ts                   # Review queries and aggregation logic
+│   │   ├── uploadthing.ts               # UploadThing typed helpers
+│   │   └── validations/                 # Zod validation schemas
+│   └── proxy.ts                         # Clerk request authentication proxy
 ├── drizzle.config.ts
 ├── package.json
 └── tsconfig.json
