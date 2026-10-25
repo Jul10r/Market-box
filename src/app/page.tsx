@@ -59,6 +59,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const allReviewStats = await getAllListingReviewStats()
 
+  const hasActiveFilters = Boolean(params.q || params.category || params.minPrice || params.maxPrice)
+
   return (
     <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-5">
@@ -78,6 +80,35 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <CategoryFilter />
 
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-lg px-3.5 py-2 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-slate-600">
+              <span className="font-medium text-slate-700">Active filters:</span>
+              {params.q && (
+                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-800">
+                  &ldquo;{params.q}&rdquo;
+                </span>
+              )}
+              {params.category && (
+                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-800">
+                  {params.category}
+                </span>
+              )}
+              {(params.minPrice || params.maxPrice) && (
+                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-800">
+                  \${params.minPrice || '0'} - \${params.maxPrice || '∞'}
+                </span>
+              )}
+            </div>
+            <Link
+              href="/"
+              className="text-slate-500 hover:text-slate-900 font-semibold underline underline-offset-2 transition ml-2 shrink-0"
+            >
+              Reset all
+            </Link>
+          </div>
+        )}
+
         {allListings.length === 0 ? (
           <div className="py-16 text-center flex flex-col items-center justify-center">
             <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
@@ -89,12 +120,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <p className="text-xs text-slate-500 mt-1 max-w-xs">
               Try adjusting your search filters or be the first to post an item for sale.
             </p>
-            <Link
-              href="/listings/new"
-              className="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer"
-            >
-              Post an Item Now
-            </Link>
+            {hasActiveFilters ? (
+              <Link
+                href="/"
+                className="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer"
+              >
+                Reset All Filters
+              </Link>
+            ) : (
+              <Link
+                href="/listings/new"
+                className="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer"
+              >
+                Post an Item Now
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">

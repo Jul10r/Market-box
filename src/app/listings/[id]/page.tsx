@@ -4,7 +4,8 @@ import { eq } from 'drizzle-orm'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { syncCurrentUser } from '@/lib/auth'
-import { deleteListingAction, contactSellerAction, toggleSoldStatusAction } from './actions'
+import { contactSellerAction, toggleSoldStatusAction } from './actions'
+import DeleteListingButton from '@/components/DeleteListingButton'
 import { getListingReviews, getListingReviewStats, hasUserReviewedListing, getUserListingCount } from '@/lib/reviews'
 import StarRating from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
@@ -69,11 +70,10 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                   {listing.category}
                 </span>
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    listing.status === 'active'
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${listing.status === 'active'
                       ? 'bg-emerald-100 text-emerald-800'
                       : 'bg-slate-100 text-slate-700'
-                  }`}
+                    }`}
                 >
                   {listing.status === 'active' ? 'Active' : 'Sold'}
                 </span>
@@ -168,23 +168,15 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                   <form action={toggleSoldStatusAction.bind(null, listing.id)} className="flex-1">
                     <button
                       type="submit"
-                      className={`w-full py-2 px-3 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        listing.status === 'sold'
+                      className={`w-full py-2 px-3 rounded-lg text-xs font-semibold transition cursor-pointer ${listing.status === 'sold'
                           ? 'bg-slate-100 text-slate-800 hover:bg-slate-200'
                           : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                      }`}
+                        }`}
                     >
                       {listing.status === 'sold' ? 'Mark Active' : 'Mark Sold'}
                     </button>
                   </form>
-                  <form action={deleteListingAction.bind(null, listing.id)}>
-                    <button
-                      type="submit"
-                      className="py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </form>
+                  <DeleteListingButton listingId={listing.id} />
                 </div>
               )}
             </div>

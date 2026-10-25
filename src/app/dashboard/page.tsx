@@ -4,7 +4,8 @@ import { listings, listingImages } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { deleteListingAction, toggleSoldStatusAction } from '@/app/listings/[id]/actions'
+import { toggleSoldStatusAction } from '@/app/listings/[id]/actions'
+import DeleteListingButton from '@/components/DeleteListingButton'
 
 export default async function DashboardPage() {
   const user = await syncCurrentUser()
@@ -100,11 +101,10 @@ export default async function DashboardPage() {
                           ${listing.price}
                         </span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            listing.status === 'sold'
-                              ? 'bg-slate-100 text-slate-600'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${listing.status === 'sold'
+                            ? 'bg-slate-100 text-slate-600'
+                            : 'bg-emerald-100 text-emerald-800'
+                            }`}
                         >
                           {listing.status}
                         </span>
@@ -132,14 +132,7 @@ export default async function DashboardPage() {
                       </button>
                     </form>
 
-                    <form action={deleteListingAction.bind(null, listing.id)}>
-                      <button
-                        type="submit"
-                        className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded font-medium transition cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </form>
+                    <DeleteListingButton listingId={listing.id} size="sm" />
                   </div>
                 </div>
               )
