@@ -1,9 +1,22 @@
 import { chats, messages, listings, users, listingImages } from "@/db/schema"
 import { syncCurrentUser } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { and, eq, or, exists, inArray } from "drizzle-orm"
+import { and, eq, or, exists, inArray, desc } from "drizzle-orm"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+
+function formatMessageTime(date?: Date | string | null) {
+  if (!date) return ''
+  const diffInMinutes = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60))
+  if (diffInMinutes < 1) return 'Just now'
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) return `${diffInHours}h ago`
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays === 1) return 'Yesterday'
+  if (diffInDays < 7) return `${diffInDays}d ago`
+  return new Date(date).toLocaleDateString()
+}
 
 export default async function UserChats() {
   const user = await syncCurrentUser()
@@ -54,6 +67,22 @@ export default async function UserChats() {
     ? await db.select().from(listingImages).where(inArray(listingImages.listingId, listingIds))
     : []
 
+  const chatIds = conversations.map((c) => c.id)
+
+  const allMessages = chatIds.length > 0
+    ? await db
+        .select()
+        .from(messages)
+        .where(inArray(messages.chatId, chatIds))
+        .orderBy(desc(messages.createdAt))
+    : []
+
+  const sortedConversations = [...conversations].sort((a, b) => {
+    const aLatest = allMessages.find((m) => m.chatId === a.id)?.createdAt || a.updatedAt
+    const bLatest = allMessages.find((m) => m.chatId === b.id)?.createdAt || b.updatedAt
+    return new Date(bLatest).getTime() - new Date(aLatest).getTime()
+  })
+
   return (
     <main className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -67,7 +96,7 @@ export default async function UserChats() {
           </span>
         </div>
 
-        {conversations.length === 0 ? (
+        {sortedConversations.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
               <svg className="w-6 h-6 stroke-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +116,7 @@ export default async function UserChats() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {conversations.map((chat) => {
+            {sortedConversations.map((chat) => {
               const isBuyer = chat.buyerId === user.id
               const role = isBuyer ? "Buying" : "Selling"
               const otherUserId = isBuyer ? chat.sellerId : chat.buyerId
@@ -95,30 +124,44 @@ export default async function UserChats() {
               const listing = relatedListings.find((l) => l.id === chat.listingId)
               const thumbnail = relatedImages.find((img) => img.listingId === chat.listingId)
 
+              const chatMsgs = allMessages.filter((m) => m.chatId === chat.id)
+              const latestMessage = chatMsgs[0]
+              const unreadCount = chatMsgs.filter(
+                (m) => !m.isRead && m.senderId !== user.id
+              ).length
+              const hasUnread = unreadCount > 0
+
               return (
                 <Link
                   key={chat.id}
                   href={`/chats/${chat.id}`}
-                  className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/75 transition block cursor-pointer"
+                  className={`p-4 flex items-center justify-between gap-4 transition block cursor-pointer ${
+                    hasUnread ? 'bg-blue-50/40 hover:bg-blue-50/70' : 'hover:bg-slate-50/75'
+                  }`}
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                      {thumbnail ? (
-                        <img src={thumbnail.imageUrl} alt="" className="w-full h-full object-cover" />
-                      ) : otherUser?.avatarUrl ? (
-                        <img src={otherUser.avatarUrl} alt={otherUser.username} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-slate-800 text-white text-xs font-bold flex items-center justify-center">
-                          {otherUser?.username?.slice(0, 2).toUpperCase() || 'MB'}
-                        </div>
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="relative shrink-0">
+                      <div className="w-11 h-11 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
+                        {thumbnail ? (
+                          <img src={thumbnail.imageUrl} alt="" className="w-full h-full object-cover" />
+                        ) : otherUser?.avatarUrl ? (
+                          <img src={otherUser.avatarUrl} alt={otherUser.username} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-slate-800 text-white text-xs font-bold flex items-center justify-center">
+                            {otherUser?.username?.slice(0, 2).toUpperCase() || 'MB'}
+                          </div>
+                        )}
+                      </div>
+                      {hasUnread && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full border-2 border-white" />
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-slate-900">
-                          {otherUser?.username || `User`}
+                        <span className={`text-sm truncate ${hasUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-900'}`}>
+                          {otherUser?.username || 'User'}
                         </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
                           isBuyer
                             ? 'bg-blue-50 text-blue-700 border border-blue-200'
                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -126,15 +169,30 @@ export default async function UserChats() {
                           {role}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
                         {listing ? `${listing.title} · $${listing.price}` : `Listing #${chat.listingId}`}
                       </p>
+                      {latestMessage && (
+                        <p className={`text-xs mt-1 truncate ${hasUnread ? 'text-slate-900 font-semibold' : 'text-slate-500'}`}>
+                          <span className="text-slate-400 font-normal">
+                            {latestMessage.senderId === user.id ? 'You: ' : ''}
+                          </span>
+                          {latestMessage.content}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <span className="text-slate-400 hover:text-slate-700 text-xs font-medium shrink-0">
-                    Open →
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="text-[11px] text-slate-400">
+                      {formatMessageTime(latestMessage?.createdAt || chat.createdAt)}
+                    </span>
+                    {hasUnread && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded-full leading-none">
+                        {unreadCount} new
+                      </span>
+                    )}
+                  </div>
                 </Link>
               )
             })}

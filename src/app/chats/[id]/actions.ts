@@ -59,6 +59,7 @@ export async function sendMessageAction(chatId: number, formData: FormData) {
     await channel.publish("message", newMessage)
 
     revalidatePath('/chats/' + chatId)
+    revalidatePath('/chats')
 
     return { success: true }
 }
