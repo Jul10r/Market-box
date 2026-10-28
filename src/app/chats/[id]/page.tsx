@@ -1,7 +1,7 @@
 import { chats, messages, listings, users } from "@/db/schema"
 import { syncCurrentUser } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq, ne } from "drizzle-orm"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import ChatMessages from './ChatMessages'
@@ -14,6 +14,9 @@ interface ChatPageProps {
 export default async function ChatPage({ params }: ChatPageProps) {
   const { id } = await params
   const chatId = Number(id)
+  if (Number.isNaN(chatId)) {
+    notFound()
+  }
 
   const user = await syncCurrentUser()
   if (!user) {
@@ -55,6 +58,17 @@ export default async function ChatPage({ params }: ChatPageProps) {
     .from(messages)
     .where(eq(messages.chatId, chat.id))
     .orderBy(asc(messages.createdAt))
+
+  await db
+    .update(messages)
+    .set({ isRead: true })
+    .where(
+      and(
+        eq(messages.chatId, chat.id),
+        ne(messages.senderId, user.id),
+        eq(messages.isRead, false)
+      )
+    )
 
   return (
     <main className="max-w-2xl mx-auto p-4 sm:p-6">
