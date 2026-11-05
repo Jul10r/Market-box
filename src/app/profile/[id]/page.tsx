@@ -1,6 +1,6 @@
 import { db } from "@/lib/db"
 import { users, listings, listingImages } from "@/db/schema"
-import { eq, and, desc } from "drizzle-orm"
+import { eq, and, desc, inArray } from "drizzle-orm"
 import { notFound } from "next/navigation"
 import { getSellerReviewStats, getUserListingCount, getAllListingReviewStats } from "@/lib/reviews"
 import StarRating from "@/components/StarRating"
@@ -34,8 +34,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         .orderBy(desc(listings.createdAt))
     : []
 
-  const allImages = isSeller
-    ? await db.select().from(listingImages)
+  const listingIds = userListings.map((listing) => listing.id)
+
+  const allImages = isSeller && listingIds.length > 0
+    ? await db
+        .select()
+        .from(listingImages)
+        .where(inArray(listingImages.listingId, listingIds))
     : []
 
   const allReviewStats = isSeller

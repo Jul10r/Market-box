@@ -1,7 +1,7 @@
 import { syncCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { listings, listingImages } from '@/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { toggleSoldStatusAction } from '@/app/listings/[id]/actions'
@@ -20,9 +20,14 @@ export default async function DashboardPage() {
     .where(eq(listings.sellerId, user.id))
     .orderBy(desc(listings.createdAt))
 
-  const allImages = await db
-    .select()
-    .from(listingImages)
+  const listingIds = myListings.map((listing) => listing.id)
+
+  const allImages = listingIds.length > 0
+    ? await db
+        .select()
+        .from(listingImages)
+        .where(inArray(listingImages.listingId, listingIds))
+    : []
 
   return (
     <main className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">

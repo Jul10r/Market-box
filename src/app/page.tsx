@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { listings, listingImages } from '@/db/schema'
-import { desc, eq, and, or, ilike, gte, lte, asc } from 'drizzle-orm'
+import { desc, eq, and, or, ilike, gte, lte, asc, inArray } from 'drizzle-orm'
 import SearchBar from '@/components/SearchBar'
 import CategoryFilter from '@/components/CategoryFilter'
 import PriceFilter from '@/components/PriceFilter'
@@ -53,9 +53,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .where(and(...conditions))
     .orderBy(orderClause)
 
-  const allImages = await db
-    .select()
-    .from(listingImages)
+  const listingIds = allListings.map((listing) => listing.id)
+
+  const allImages = listingIds.length > 0
+    ? await db
+        .select()
+        .from(listingImages)
+        .where(inArray(listingImages.listingId, listingIds))
+    : []
 
   const allReviewStats = await getAllListingReviewStats()
 
@@ -96,7 +101,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               )}
               {(params.minPrice || params.maxPrice) && (
                 <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-800">
-                  \${params.minPrice || '0'} - \${params.maxPrice || '∞'}
+                  ${params.minPrice || '0'} - ${params.maxPrice || '∞'}
                 </span>
               )}
             </div>
